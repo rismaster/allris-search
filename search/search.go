@@ -67,8 +67,8 @@ type SearchElem struct {
 
 type SearchContext struct {
 	AppContext   *application.AppContext
-	SearchIndex  Index
-	SearchClient Client
+	SearchIndex  *Index
+	SearchClient *Client
 }
 
 type Index interface {
