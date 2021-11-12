@@ -66,7 +66,7 @@ type SearchElem struct {
 }
 
 type SearchContext struct {
-	appContext   *application.AppContext
+	AppContext   *application.AppContext
 	SearchIndex  Index
 	SearchClient Client
 }
@@ -138,7 +138,7 @@ func (sctx *SearchContext) prepareSearchElem(elem *SearchParent, documentName st
 	}
 
 	var anlage db.Anlage
-	err = sctx.appContext.Db().Get(sctx.appContext.Ctx(), documentKey, &anlage)
+	err = sctx.AppContext.Db().Get(sctx.AppContext.Ctx(), documentKey, &anlage)
 	if err != nil {
 		slog.Error("error getting sitzung for document %s - %v", documentName, err)
 		return res, err
@@ -180,7 +180,7 @@ func (sctx *SearchContext) processPage(documentName string) (totalPages int, ele
 	}
 	elems = append(elems, lastElem)
 	query := &storage.Query{Prefix: documentName}
-	it := sctx.appContext.Store().Bucket(sctx.appContext.Config.GetBucketOcr()).Objects(sctx.appContext.Ctx(), query)
+	it := sctx.AppContext.Store().Bucket(sctx.AppContext.Config.GetBucketOcr()).Objects(sctx.AppContext.Ctx(), query)
 	var lastPCount = sctx.countBytesSearchParent(lastElem)
 	for {
 
@@ -193,7 +193,7 @@ func (sctx *SearchContext) processPage(documentName string) (totalPages int, ele
 			return 0, nil, err
 		}
 
-		jsonOcr, err := ocr.ReadOcrFromFile(sctx.appContext, attrs.Name, sctx.appContext.Config.GetBucketOcr())
+		jsonOcr, err := ocr.ReadOcrFromFile(sctx.AppContext, attrs.Name, sctx.AppContext.Config.GetBucketOcr())
 		if err != nil {
 			slog.Error("Error on Reading Ocr-File %s - %v", attrs.Name, err)
 		}
@@ -222,69 +222,69 @@ func (sctx *SearchContext) processPage(documentName string) (totalPages int, ele
 func (sctx *SearchContext) getEntityBeratungen(parentKey *datastore.Key) (entity SearchEntity, results []SearchBeratung, err error) {
 
 	var query *datastore.Query
-	if parentKey.Kind == sctx.appContext.Config.GetEntitySitzung() {
+	if parentKey.Kind == sctx.AppContext.Config.GetEntitySitzung() {
 		var sitzung db.Sitzung
-		err = sctx.appContext.Db().Get(sctx.appContext.Ctx(), parentKey, &sitzung)
+		err = sctx.AppContext.Db().Get(sctx.AppContext.Ctx(), parentKey, &sitzung)
 		if err != nil {
 			slog.Error("error getting sitzung from datastore parentKey %v - %v", parentKey, err)
 			return entity, nil, err
 		}
 
-		query = datastore.NewQuery(sctx.appContext.Config.GetEntityTop()).Filter("SILFDNR =", sitzung.SILFDNR)
+		query = datastore.NewQuery(sctx.AppContext.Config.GetEntityTop()).Filter("SILFDNR =", sitzung.SILFDNR)
 		entity = SearchEntity{
 			Title:    sitzung.Title,
 			Datum:    sitzung.Datum.Unix(),
 			Name:     fmt.Sprintf("%d", sitzung.SILFDNR),
-			Kind:     sctx.appContext.Config.GetEntitySitzung(),
+			Kind:     sctx.AppContext.Config.GetEntitySitzung(),
 			KeyEnc:   parentKey.Encode(),
 			SubTitle: sitzung.Gremium,
 		}
-	} else if parentKey.Kind == sctx.appContext.Config.GetEntityVorlage() {
+	} else if parentKey.Kind == sctx.AppContext.Config.GetEntityVorlage() {
 		var vorlage db.Vorlage
-		err = sctx.appContext.Db().Get(sctx.appContext.Ctx(), parentKey, &vorlage)
+		err = sctx.AppContext.Db().Get(sctx.AppContext.Ctx(), parentKey, &vorlage)
 		if err != nil {
 			slog.Error("error getting vorlage from datastore parentKey %v - %v", parentKey, err)
 			return entity, nil, err
 		}
 
-		query = datastore.NewQuery(sctx.appContext.Config.GetEntityTop()).Filter("VOLFDNR =", vorlage.VOLFDNR)
+		query = datastore.NewQuery(sctx.AppContext.Config.GetEntityTop()).Filter("VOLFDNR =", vorlage.VOLFDNR)
 		entity = SearchEntity{
 			Title:    vorlage.Betreff,
 			Datum:    vorlage.DatumAngelegt.Unix(),
 			Name:     fmt.Sprintf("%d", vorlage.VOLFDNR),
-			Kind:     sctx.appContext.Config.GetEntityVorlage(),
+			Kind:     sctx.AppContext.Config.GetEntityVorlage(),
 			KeyEnc:   parentKey.Encode(),
 			SubTitle: vorlage.Federfuehrend,
 		}
-	} else if parentKey.Kind == sctx.appContext.Config.GetEntityTop() {
+	} else if parentKey.Kind == sctx.AppContext.Config.GetEntityTop() {
 
 		var top db.Top
-		err = sctx.appContext.Db().Get(sctx.appContext.Ctx(), parentKey, &top)
+		err = sctx.AppContext.Db().Get(sctx.AppContext.Ctx(), parentKey, &top)
 		if err != nil {
 			slog.Error("error getting top from datastore parentKey %v - %v", parentKey, err)
 			return entity, nil, err
 		}
 
 		var sitzung db.Sitzung
-		err = sctx.appContext.Db().Get(sctx.appContext.Ctx(), parentKey.Parent, &sitzung)
+		err = sctx.AppContext.Db().Get(sctx.AppContext.Ctx(), parentKey.Parent, &sitzung)
 		if err != nil {
 			return entity, nil, err
 		}
 
-		query = datastore.NewQuery(sctx.appContext.Config.GetEntityTop()).Filter("TOLFDNR =", top.TOLFDNR)
+		query = datastore.NewQuery(sctx.AppContext.Config.GetEntityTop()).Filter("TOLFDNR =", top.TOLFDNR)
 
 		entity = SearchEntity{
 			Title:    fmt.Sprintf("%s (%s: %s)", top.Betreff, top.Nr, sitzung.Title),
 			Datum:    top.Datum.Unix(),
 			Name:     fmt.Sprintf("%d", top.TOLFDNR),
-			Kind:     sctx.appContext.Config.GetEntityTop(),
+			Kind:     sctx.AppContext.Config.GetEntityTop(),
 			KeyEnc:   parentKey.Encode(),
 			SubTitle: fmt.Sprintf("%s | %s", top.Federfuehrend, sitzung.Gremium),
 		}
 	}
 
 	var beratungen []db.Top
-	_, err = sctx.appContext.Db().GetAll(sctx.appContext.Ctx(), query, &beratungen)
+	_, err = sctx.AppContext.Db().GetAll(sctx.AppContext.Ctx(), query, &beratungen)
 	if err != nil {
 		slog.Error("error getting from datastore parentKey %v - %v", parentKey, err)
 		return entity, nil, err
@@ -310,17 +310,17 @@ func (sctx *SearchContext) createDocumentKey(name string, parentKey *datastore.K
 
 	var restpath string
 	var key *datastore.Key
-	if strings.HasPrefix(name, sctx.appContext.Config.GetSitzungType()) {
-		restpath, key = sctx.createKey(name, "Sitzung", sctx.appContext.Config.GetSitzungType(), parentKey)
-	} else if strings.HasPrefix(name, sctx.appContext.Config.GetVorlageType()) {
-		restpath, key = sctx.createKey(name, "Vorlage", sctx.appContext.Config.GetVorlageType(), parentKey)
-	} else if strings.HasPrefix(name, sctx.appContext.Config.GetTopType()) {
-		restpath, key = sctx.createKey(name, "Top", sctx.appContext.Config.GetTopType(), parentKey)
-	} else if strings.HasPrefix(name, sctx.appContext.Config.GetAnlageType()) {
-		trimmed := strings.TrimPrefix(name, sctx.appContext.Config.GetAnlageType()+"-")
+	if strings.HasPrefix(name, sctx.AppContext.Config.GetSitzungType()) {
+		restpath, key = sctx.createKey(name, "Sitzung", sctx.AppContext.Config.GetSitzungType(), parentKey)
+	} else if strings.HasPrefix(name, sctx.AppContext.Config.GetVorlageType()) {
+		restpath, key = sctx.createKey(name, "Vorlage", sctx.AppContext.Config.GetVorlageType(), parentKey)
+	} else if strings.HasPrefix(name, sctx.AppContext.Config.GetTopType()) {
+		restpath, key = sctx.createKey(name, "Top", sctx.AppContext.Config.GetTopType(), parentKey)
+	} else if strings.HasPrefix(name, sctx.AppContext.Config.GetAnlageType()) {
+		trimmed := strings.TrimPrefix(name, sctx.AppContext.Config.GetAnlageType()+"-")
 		return datastore.NameKey("Anlage", trimmed, parentKey)
-	} else if strings.HasPrefix(name, sctx.appContext.Config.GetAnlageDocumentType()) {
-		restpath, key = sctx.createKey(name, "BasisAnlage", sctx.appContext.Config.GetAnlageDocumentType(), parentKey)
+	} else if strings.HasPrefix(name, sctx.AppContext.Config.GetAnlageDocumentType()) {
+		restpath, key = sctx.createKey(name, "BasisAnlage", sctx.AppContext.Config.GetAnlageDocumentType(), parentKey)
 		return key
 	} else {
 		slog.Error("ERROR createDocumentKey: %s", name)
