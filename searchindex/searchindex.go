@@ -2,7 +2,6 @@ package searchindex
 
 import (
 	"cloud.google.com/go/datastore"
-	"cloud.google.com/go/pubsub"
 	"cloud.google.com/go/storage"
 	"fmt"
 	"github.com/rismaster/allris-common/application"
@@ -14,12 +13,6 @@ import (
 	"path/filepath"
 	"strings"
 )
-
-const STR_SITZUNG = "sitzung"
-const STR_VORLAGE = "vorlage"
-const STR_TOP = "top"
-const STR_BASISANLAGE = "basisanlage"
-const STR_ANLAGE = "anlage"
 
 type SearchParent struct {
 	Pages []SearchPage
@@ -76,7 +69,6 @@ type SearchContext struct {
 	appContext   *application.AppContext
 	SearchIndex  Index
 	SearchClient Client
-	TopicDone    *pubsub.Topic
 }
 
 type Index interface {
@@ -318,17 +310,17 @@ func (sctx *SearchContext) createDocumentKey(name string, parentKey *datastore.K
 
 	var restpath string
 	var key *datastore.Key
-	if strings.HasPrefix(name, STR_SITZUNG) {
-		restpath, key = sctx.createKey(name, "Sitzung", STR_SITZUNG, parentKey)
-	} else if strings.HasPrefix(name, STR_VORLAGE) {
-		restpath, key = sctx.createKey(name, "Vorlage", STR_VORLAGE, parentKey)
-	} else if strings.HasPrefix(name, STR_TOP) {
-		restpath, key = sctx.createKey(name, "Top", STR_TOP, parentKey)
-	} else if strings.HasPrefix(name, STR_ANLAGE) {
-		trimmed := strings.TrimPrefix(name, STR_ANLAGE+"-")
+	if strings.HasPrefix(name, sctx.appContext.Config.GetSitzungType()) {
+		restpath, key = sctx.createKey(name, "Sitzung", sctx.appContext.Config.GetSitzungType(), parentKey)
+	} else if strings.HasPrefix(name, sctx.appContext.Config.GetVorlageType()) {
+		restpath, key = sctx.createKey(name, "Vorlage", sctx.appContext.Config.GetVorlageType(), parentKey)
+	} else if strings.HasPrefix(name, sctx.appContext.Config.GetTopType()) {
+		restpath, key = sctx.createKey(name, "Top", sctx.appContext.Config.GetTopType(), parentKey)
+	} else if strings.HasPrefix(name, sctx.appContext.Config.GetAnlageType()) {
+		trimmed := strings.TrimPrefix(name, sctx.appContext.Config.GetAnlageType()+"-")
 		return datastore.NameKey("Anlage", trimmed, parentKey)
-	} else if strings.HasPrefix(name, STR_BASISANLAGE) {
-		restpath, key = sctx.createKey(name, "BasisAnlage", STR_BASISANLAGE, parentKey)
+	} else if strings.HasPrefix(name, sctx.appContext.Config.GetAnlageDocumentType()) {
+		restpath, key = sctx.createKey(name, "BasisAnlage", sctx.appContext.Config.GetAnlageDocumentType(), parentKey)
 		return key
 	} else {
 		slog.Error("ERROR createDocumentKey: %s", name)
