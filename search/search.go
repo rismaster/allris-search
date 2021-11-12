@@ -1,4 +1,4 @@
-package searchindex
+package search
 
 import (
 	"cloud.google.com/go/datastore"

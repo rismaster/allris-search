@@ -1,4 +1,4 @@
-module github.com/rismaster/allris-dpage
+module github.com/rismaster/allris-search
 
 go 1.15
 
